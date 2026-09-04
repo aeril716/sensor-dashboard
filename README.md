@@ -23,22 +23,26 @@ telemetry. Swap the sensor names and the pipeline does not care.
 | 5 | wrap-up — scoring against ground truth, demo, robot mapping | not started |
 | 6 | fix feedback loop — plant a firmware-correlated cause, discover it, fix it, show before/after | bonus |
 
-Detailed plan, decisions, and design notes: [`claude_code/PLAN.md`](claude_code/PLAN.md).
+Detailed plan, decisions, and design notes: [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Layout
 
 ```
-raw_data/
-  generator.py      fake sensors -> telemetry.db (raw_readings, hosts) + ground_truth.csv
+src/
+  generator.py      fake sensors -> data/telemetry.db (raw_readings, hosts) + data/ground_truth.csv
   collector.py      raw_readings -> clean_readings (parsed values, host info, parse errors)
   stream.py         tick loop: runs the collector every N seconds
   detector.py       detection rules on clean_readings; prints evidence episodes
+data/
   ground_truth.csv  answer key for scoring (the detector never reads it)
   telemetry.db      SQLite, generated, not committed
 reports/
   data_summary.md   data distributions, per-failure views, threshold sweeps (for choosing numbers)
-learning/           line-by-line explanations of each script (Korean)
-claude_code/        PLAN.md and working rules
+learning/           line-by-line explanations of each script
+docs/PLAN.md        the plan: fleet, physics, failures, phases, decisions
+CLAUDE.md           working rules for the Claude Code sessions
+
+Korean markdown files have an English twin with the `-en` suffix (e.g. `learning/collector-en.md`).
 ```
 
 ## Quick start
@@ -46,7 +50,7 @@ claude_code/        PLAN.md and working rules
 Python 3.11+ (standard library only — `sqlite3`, `json`, `re`, `zoneinfo`).
 
 ```bash
-cd raw_data
+cd src
 python generator.py backfill --hours 48 --seed 42     # 48 h of raw readings + ground_truth.csv
 python collector.py                                    # raw -> clean_readings
 python detector.py threshold cpu_temp 65 --minutes 10  # evidence: who was above 65 C for 10+ min
@@ -146,4 +150,4 @@ same datacenter (two events, not one).
 
 Design and every decision (schemas, thresholds, rules) are made by the author;
 the code is typed with Claude Code and explained line by line before moving on.
-Those explanations live in `learning/`.
+Those explanations live in `learning/` (Korean, with `-en` English versions).

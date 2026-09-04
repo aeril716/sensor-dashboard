@@ -1,7 +1,7 @@
-# Read PLAN.md first, every session.
+# Read docs/PLAN.md first, every session.
 
 Project: server fleet telemetry triage dashboard (Gritt practicum interview prep).
-Current step is marked in the Status section of PLAN.md. Update that section when a step is done.
+Current step is marked in the Status section of docs/PLAN.md. Update that section when a step is done.
 
 ## How to work with Aeri
 
@@ -17,3 +17,4 @@ Current step is marked in the Status section of PLAN.md. Update that section whe
 - 대답은 짧게. 한국어로 해도 됨.
 - 선택지를 줄 때는 최대 2개, 각각 한 줄.
 - 코드를 설명할 때마다 learning/ 폴더의 md에 그 설명을 추가할 것 (collector.py -> learning/collector.md).
+- learning/과 reports/의 한국어 md는 같은 이름에 `-en`을 붙인 영어 버전을 함께 유지할 것 (예: collector.md ↔ collector-en.md).

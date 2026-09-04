@@ -10,7 +10,7 @@ import time                              # time.sleep = 몇 초 기다리기
 from datetime import datetime, timezone  # 지금 시각 찍기용
 import collector                         # 우리 collector.py. open_db, collect_once를 빌려 쓴다
 ```
-`import collector`가 되는 이유: 같은 폴더(raw_data)에 있으니까. 이때 collector.py의
+`import collector`가 되는 이유: 같은 폴더(src)에 있으니까. 이때 collector.py의
 `if __name__ == "__main__"` 아래 main()은 실행되지 않는다.
 
 ## 틱 하나

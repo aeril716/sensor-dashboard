@@ -26,8 +26,9 @@ Usage:
 import json
 import re
 import sqlite3
+from pathlib import Path
 
-DB_PATH = "telemetry.db"
+DB_PATH = Path(__file__).resolve().parent.parent / "data" / "telemetry.db"   # <repo>/data/telemetry.db
 
 # ---------------------------------------------------------------------------
 # 1. Parsers — one per sensor. Each returns a number or raises ValueError.

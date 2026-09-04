@@ -1,14 +1,14 @@
-# 데이터 요약 리포트 — seed 42, 48h
+# Data summary report — seed 42, 48 h
 
-생성: 2026-09-03 (부하 계단 수정 후 재생성한 데이터 기준). 대상: `data/telemetry.db` → `clean_readings`. 사람이 threshold를 정하기 위한 리포트라 ground_truth.csv를 참조한다 (detector는 안 읽음).
+Generated 2026-09-03 on the data regenerated after the load-step fix. Source: `data/telemetry.db` → `clean_readings`. This report is for a human choosing thresholds, so it consults ground_truth.csv (the detector never does).
 
-## 1. 개요
+## 1. Overview
 
-- 기간: `2026-09-02T02:32:00+00:00` ~ `2026-09-04T02:31:00+00:00` (UTC), 2,880분
-- 행 수: 180,984 (parse_error 0). 분당 63행 기대(서버 15 × 센서 4 + 날씨 3) → 기대치 181,440, 부족분 456행 = 침묵(server_stop, power_outage)
-- 현지시간: Ashburn UTC-4, Sacramento UTC-7, Honolulu UTC-10
+- Period: `2026-09-02T02:32:00+00:00` ~ `2026-09-04T02:31:00+00:00` (UTC), 2,880 minutes
+- Rows: 180,984 (0 parse errors). Expected 63 rows per minute (15 servers × 4 sensors + 3 weather) → 181,440; the 456 missing rows are silence (server_stop, power_outage)
+- Local time: Ashburn UTC-4, Sacramento UTC-7, Honolulu UTC-10
 
-정답지(ground_truth.csv):
+Answer key (ground_truth.csv):
 
 | failure | scope | UTC | local |
 |---|---|---|---|
@@ -19,7 +19,7 @@
 | ambient_high | dc-west | 09-03 22:14 → 09-04 02:03 | Thu 15:14 → Thu 19:03 (dc-west) |
 | sensor_fault | dc-east-s5/fan_rpm | 09-04 00:09 → 09-04 00:33 | Thu 20:09 → Thu 20:33 (dc-east) |
 
-## 2. 센서별 분포 (48시간 전체, 고장 포함)
+## 2. Distribution per sensor (all 48 h, failures included)
 
 | sensor | unit | n | min | p5 | p25 | median | p75 | p95 | p99 | max |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -29,7 +29,7 @@
 | mem_used | GB | 43,086 | 41.0 | 71.0 | 73.0 | 86.0 | 120.0 | 137.0 | 144.0 | 177.0 |
 | outside_temp | °C | 8,640 | 14.0 | 18.6 | 24.0 | 27.8 | 31.9 | 40.3 | 45.5 | 47.2 |
 
-### 2a. 데이터센터별
+### 2a. Per datacenter
 
 | dc | sensor | min | median | p95 | p99 | max |
 |---|---|---|---|---|---|---|
@@ -49,57 +49,57 @@
 | dc-hawaii | mem_used | 41.0 | 84.0 | 135.0 | 137.0 | 140.0 |
 | dc-hawaii | outside_temp | 22.8 | 29.0 | 34.0 | 34.4 | 34.9 |
 
-## 3. 정상 구간만 (정답지 고장 구간 + 해당 호스트 제외)
+## 3. Normal periods only (failure windows and their hosts excluded)
 
-threshold를 이 위에 놓으면 정상 시간에는 안 울린다. 폭염 램프(ambient_high 구간 *전*의 30시간)와 저녁 피크는 정상에 포함.
+A threshold above these values never fires in normal time. The heat-wave ramp (the 30 h *before* the ambient_high window) and the evening peaks count as normal.
 
-| sensor | n(normal) | median | p95 | p99 | max | max가 난 곳 |
+| sensor | n(normal) | median | p95 | p99 | max | where the max occurred |
 |---|---|---|---|---|---|---|
 | cpu_temp | 41,696 | 46.6 | 57.9 | 59.5 | 65.0 | dc-west-s4 09-04 02:03 UTC |
 | fan_rpm | 41,696 | 3120.0 | 4646.0 | 4894.0 | 5463.0 | dc-west-s4 09-04 02:13 UTC |
 | power_draw | 41,696 | 254.3 | 412.7 | 429.5 | 457.9 | dc-west-s4 09-03 00:11 UTC |
 | mem_used | 41,696 | 84.0 | 137.0 | 143.0 | 174.0 | dc-west-s1 09-03 00:39 UTC |
 
-fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 fan이 *떨어지는* 고장이라 아래쪽 선이 필요.
+Lowest normal fan_rpm: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail is a *falling* fan, so it needs a lower line.
 
-### 3a. 정상 구간, dc × 현지 시간대별 (중앙값, 최대)
+### 3a. Normal periods, by dc × local time of day (median, max)
 
-| dc | 시간대(현지) | cpu med | cpu max | fan med | fan max | power med | power max |
+| dc | period (local) | cpu med | cpu max | fan med | fan max | power med | power max |
 |---|---|---|---|---|---|---|---|
-| dc-east | 새벽 02-09 | 42.8 | 47.1 | 2813 | 3328 | 217.2 | 275.8 |
-| dc-east | 아침 09-11 | 47.9 | 51.5 | 3405 | 3805 | 287.9 | 342.6 |
-| dc-east | 낮 11-16 | 43.7 | 51.5 | 2817 | 3677 | 218.3 | 323.7 |
-| dc-east | 저녁 16-23 | 54.1 | 59.8 | 4075 | 4989 | 369.4 | 442.7 |
-| dc-east | 밤 23-02 | 47.0 | 53.9 | 3292 | 4004 | 275.2 | 367.7 |
-| dc-west | 새벽 02-09 | 43.0 | 47.9 | 2842 | 3376 | 221.1 | 281.2 |
-| dc-west | 아침 09-11 | 50.2 | 55.9 | 3520 | 3853 | 302.5 | 352.9 |
-| dc-west | 낮 11-16 | 47.8 | 54.3 | 2847 | 3726 | 221.6 | 322.8 |
-| dc-west | 저녁 16-23 | 56.9 | 65.0 | 4502 | 5463 | 400.3 | 457.9 |
-| dc-west | 밤 23-02 | 47.8 | 54.1 | 3379 | 4082 | 285.5 | 368.7 |
-| dc-hawaii | 새벽 02-09 | 42.9 | 47.4 | 2824 | 3302 | 218.9 | 287.1 |
-| dc-hawaii | 아침 09-11 | 48.9 | 52.2 | 3482 | 3761 | 297.2 | 335.6 |
-| dc-hawaii | 낮 11-16 | 45.0 | 52.2 | 2833 | 3658 | 219.8 | 319.6 |
-| dc-hawaii | 저녁 16-23 | 56.3 | 60.2 | 4379 | 4988 | 392.5 | 433.8 |
-| dc-hawaii | 밤 23-02 | 47.4 | 52.9 | 3344 | 4006 | 281.3 | 353.1 |
+| dc-east | night 02-09 | 42.8 | 47.1 | 2813 | 3328 | 217.2 | 275.8 |
+| dc-east | morning 09-11 | 47.9 | 51.5 | 3405 | 3805 | 287.9 | 342.6 |
+| dc-east | day 11-16 | 43.7 | 51.5 | 2817 | 3677 | 218.3 | 323.7 |
+| dc-east | evening 16-23 | 54.1 | 59.8 | 4075 | 4989 | 369.4 | 442.7 |
+| dc-east | late 23-02 | 47.0 | 53.9 | 3292 | 4004 | 275.2 | 367.7 |
+| dc-west | night 02-09 | 43.0 | 47.9 | 2842 | 3376 | 221.1 | 281.2 |
+| dc-west | morning 09-11 | 50.2 | 55.9 | 3520 | 3853 | 302.5 | 352.9 |
+| dc-west | day 11-16 | 47.8 | 54.3 | 2847 | 3726 | 221.6 | 322.8 |
+| dc-west | evening 16-23 | 56.9 | 65.0 | 4502 | 5463 | 400.3 | 457.9 |
+| dc-west | late 23-02 | 47.8 | 54.1 | 3379 | 4082 | 285.5 | 368.7 |
+| dc-hawaii | night 02-09 | 42.9 | 47.4 | 2824 | 3302 | 218.9 | 287.1 |
+| dc-hawaii | morning 09-11 | 48.9 | 52.2 | 3482 | 3761 | 297.2 | 335.6 |
+| dc-hawaii | day 11-16 | 45.0 | 52.2 | 2833 | 3658 | 219.8 | 319.6 |
+| dc-hawaii | evening 16-23 | 56.3 | 60.2 | 4379 | 4988 | 392.5 | 433.8 |
+| dc-hawaii | late 23-02 | 47.4 | 52.9 | 3344 | 4006 | 281.3 | 353.1 |
 
-## 4. 고장별 모습 — 요약 + 개별 값
+## 4. Each failure — summary + individual values
 
-### 4.1 overload — dc-west-s1 — 09-02 22:57 → 09-03 00:39 UTC (Wed 15:57 → Wed 17:39 현지)
+### 4.1 overload — dc-west-s1 — 09-02 22:57 → 09-03 00:39 UTC (Wed 15:57 → Wed 17:39 local)
 
-**요약 (중앙값)**
+**Summary (medians)**
 
-| sensor | 대상: 1h 전 | 대상: 고장 중 | 대상: 1h 후 | 같은 dc 동료: 고장 중 | 대상: 고장 중 max/min |
+| sensor | target: 1 h before | target: during | target: 1 h after | same-dc peers: during | target: max/min during |
 |---|---|---|---|---|---|
 | cpu_temp | 46.8 | 65.2 | 59.3 | 58.5 | 67.0 / 63.2 |
 | fan_rpm | 2888.0 | 5804.0 | 4761.0 | 4541.0 | 6071.0 / 5621.0 |
 | power_draw | 227.7 | 480.7 | 410.3 | 391.6 | 496.9 / 459.0 |
 | mem_used | 74.0 | 170.0 | 145.0 | 126.0 | 177.0 / 90.0 |
 
-**개별 값**
+**Individual values**
 
-5분마다, 대상 서버의 4개 센서 + 동료 중앙값(cpu, fan). 고장 15분 전 ~ 15분 후 (← = 정답 구간).
+Every 5 min: the target server's 4 sensors + peer medians (cpu, fan), from 15 min before to 15 min after (← = answer-key window).
 
-| ts_utc | cpu_temp | fan_rpm | power_draw | mem_used | 동료 cpu med | 동료 fan med |
+| ts_utc | cpu_temp | fan_rpm | power_draw | mem_used | peer cpu med | peer fan med |
 |---|---|---|---|---|---|---|
 | 09-02 22:42 | 49.7 | 3228 | 248.1 | 78 | 49.3 | 3084 |
 | 09-02 22:47 | 51.7 | 3135 | 276.0 | 80 | 50.6 | 3333 |
@@ -129,22 +129,22 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | 09-03 00:47 | 59.5 | 4771 | 403.7 | 162 | 58.7 | 4621 |
 | 09-03 00:52 | 60.2 | 4854 | 408.2 | 157 | 58.3 | 4604 |
 
-### 4.2 cooling_fail — dc-east-s1 — 09-02 23:02 → 09-03 01:01 UTC (Wed 19:02 → Wed 21:01 현지)
+### 4.2 cooling_fail — dc-east-s1 — 09-02 23:02 → 09-03 01:01 UTC (Wed 19:02 → Wed 21:01 local)
 
-**요약 (중앙값)**
+**Summary (medians)**
 
-| sensor | 대상: 1h 전 | 대상: 고장 중 | 대상: 1h 후 | 같은 dc 동료: 고장 중 | 대상: 고장 중 max/min |
+| sensor | target: 1 h before | target: during | target: 1 h after | same-dc peers: during | target: max/min during |
 |---|---|---|---|---|---|
 | cpu_temp | 57.4 | 74.8 | 57.3 | 53.8 | 76.2 / 57.1 |
 | fan_rpm | 4646.0 | 1850.0 | 4641.0 | 4057.0 | 4617.0 / 1690.0 |
 | power_draw | 418.2 | 294.4 | 412.4 | 367.1 | 431.0 / 278.6 |
 | mem_used | 138.0 | 138.0 | 138.0 | 122.0 | 141.0 / 136.0 |
 
-**개별 값**
+**Individual values**
 
-5분마다, 대상 서버의 4개 센서 + 동료 중앙값(cpu, fan). 고장 15분 전 ~ 15분 후 (← = 정답 구간).
+Every 5 min: the target server's 4 sensors + peer medians (cpu, fan), from 15 min before to 15 min after (← = answer-key window).
 
-| ts_utc | cpu_temp | fan_rpm | power_draw | mem_used | 동료 cpu med | 동료 fan med |
+| ts_utc | cpu_temp | fan_rpm | power_draw | mem_used | peer cpu med | peer fan med |
 |---|---|---|---|---|---|---|
 | 09-02 22:47 | 57.5 | 4685 | 420.5 | 136 | 54.4 | 4083 |
 | 09-02 22:52 | 57.4 | 4603 | 427.6 | 140 | 54.8 | 4033 |
@@ -177,11 +177,11 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | 09-03 01:07 | 57.8 | 4680 | 417.2 | 138 | 53.3 | 4143 |
 | 09-03 01:12 | 57.7 | 4620 | 431.5 | 139 | 53.9 | 4082 |
 
-### 4.3 server_stop — dc-west-s5 — 09-03 05:25 → 09-03 06:14 UTC (Wed 22:25 → Wed 23:14 현지)
+### 4.3 server_stop — dc-west-s5 — 09-03 05:25 → 09-03 06:14 UTC (Wed 22:25 → Wed 23:14 local)
 
-침묵: 행이 없다. 분당 행 수 (해당 호스트 vs 비교 호스트 하나):
+Silence: there are no rows. Rows per minute (affected hosts vs one comparison host):
 
-| ts_utc | dc-west-s5 | dc-west-s1 (비교) |
+| ts_utc | dc-west-s5 | dc-west-s1 (comparison) |
 |---|---|---|
 | 09-03 05:22 | 4 | 4 |
 | 09-03 05:23 | 4 | 4 |
@@ -239,11 +239,11 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | 09-03 06:15 | 4 | 4 |
 | 09-03 06:16 | 4 | 4 |
 
-### 4.4 power_outage — dc-hawaii — 09-03 11:08 → 09-03 11:21 UTC (Thu 01:08 → Thu 01:21 현지)
+### 4.4 power_outage — dc-hawaii — 09-03 11:08 → 09-03 11:21 UTC (Thu 01:08 → Thu 01:21 local)
 
-침묵: 행이 없다. 분당 행 수 (해당 호스트 vs 비교 호스트 하나):
+Silence: there are no rows. Rows per minute (affected hosts vs one comparison host):
 
-| ts_utc | dc-hawaii-s1 | dc-hawaii-s2 | dc-hawaii-s3 | dc-hawaii-s4 | dc-hawaii-s5 | dc-east-s1 (비교) |
+| ts_utc | dc-hawaii-s1 | dc-hawaii-s2 | dc-hawaii-s3 | dc-hawaii-s4 | dc-hawaii-s5 | dc-east-s1 (comparison) |
 |---|---|---|---|---|---|---|
 | 09-03 11:05 | 4 | 4 | 4 | 4 | 4 | 4 |
 | 09-03 11:06 | 4 | 4 | 4 | 4 | 4 | 4 |
@@ -265,9 +265,9 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | 09-03 11:22 | 4 | 4 | 4 | 4 | 4 | 4 |
 | 09-03 11:23 | 4 | 4 | 4 | 4 | 4 | 4 |
 
-복귀 직후 mem_used (리셋 확인) vs 직전:
+mem_used right after return (reset check) vs right before:
 
-| host | 직전 값 | 복귀 첫 값 |
+| host | last value before | first value after |
 |---|---|---|
 | dc-hawaii-s1 | 91.0 | 42.0 |
 | dc-hawaii-s2 | 95.0 | 41.0 |
@@ -275,11 +275,11 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | dc-hawaii-s4 | 97.0 | 42.0 |
 | dc-hawaii-s5 | 95.0 | 44.0 |
 
-### 4.5 ambient_high — dc-west — 09-03 22:14 → 09-04 02:03 UTC (Thu 15:14 → Thu 19:03 현지)
+### 4.5 ambient_high — dc-west — 09-03 22:14 → 09-04 02:03 UTC (Thu 15:14 → Thu 19:03 local)
 
-**요약 (중앙값)**
+**Summary (medians)**
 
-| sensor | 대상: 1h 전 | 대상: 고장 중 | 대상: 1h 후 | 다른 dc 서버: 고장 중 | 대상: 고장 중 max/min |
+| sensor | target: 1 h before | target: during | target: 1 h after | other-dc servers: during | target: max/min during |
 |---|---|---|---|---|---|
 | cpu_temp | 52.4 | 63.3 | 61.9 | 52.1 | 69.1 / 50.8 |
 | fan_rpm | 2828.0 | 4938.0 | 4921.0 | 3838.0 | 5723.0 / 2633.0 |
@@ -287,11 +287,11 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | mem_used | 73.0 | 129.0 | 135.0 | 118.0 | 146.0 / 70.0 |
 | outside_temp | 45.7 | 44.2 | 39.0 | — | 46.6 / 39.2 |
 
-**개별 값**
+**Individual values**
 
-15분마다, dc-west 서버 5대 cpu_temp 각각 + 바깥 + 다른 dc 중앙값. 고장 60분 전 ~ 30분 후 (← = 정답 구간).
+Every 15 min: cpu_temp of each of the 5 dc-west servers + outside temp + other-dc medians, from 60 min before to 30 min after (← = answer-key window).
 
-| ts_utc | 현지 | outside | west-s1 | west-s2 | west-s3 | west-s4 | west-s5 | east med | hawaii med |
+| ts_utc | local | outside | west-s1 | west-s2 | west-s3 | west-s4 | west-s5 | east med | hawaii med |
 |---|---|---|---|---|---|---|---|---|---|
 | 09-03 21:14 | 14:14 | 45.4 | 52.4 | 52.7 | 52.3 | 52.4 | 52.9 | 54.7 | 45.8 |
 | 09-03 21:29 | 14:29 | 45.7 | 51.6 | 52.9 | 52.1 | 52.5 | 52.8 | 54.9 | 44.3 |
@@ -316,11 +316,11 @@ fan_rpm 정상 최저: 2550.0 rpm (dc-east-s5 09-02 19:25 UTC). cooling_fail은 
 | 09-04 02:14 | 19:14 | 38.8 | 62.0 | 60.5 | 59.0 | 63.4 | 60.6 | 54.5 | 55.2 |
 | 09-04 02:29 | 19:29 | 37.9 | 61.8 | 61.5 | 59.5 | 63.4 | 60.9 | 54.1 | 57.4 |
 
-### 4.6 sensor_fault — dc-east-s5/fan_rpm — 09-04 00:09 → 09-04 00:33 UTC (Thu 20:09 → Thu 20:33 현지)
+### 4.6 sensor_fault — dc-east-s5/fan_rpm — 09-04 00:09 → 09-04 00:33 UTC (Thu 20:09 → Thu 20:33 local)
 
-dc-east-s5의 fan_rpm만 이상. 같은 호스트의 다른 센서와 동료들은 정상. 매 분 값 (고장 3분 전 ~ 3분 후, ← = 정답 구간):
+Only dc-east-s5's fan_rpm is wrong; the host's other sensors and its peers are normal. Every minute, 3 min before to 3 min after (← = answer-key window):
 
-| ts_utc | dc-east-s5 fan_rpm (raw) | dc-east-s5 cpu_temp | 동료 fan_rpm 중앙값 |
+| ts_utc | dc-east-s5 fan_rpm (raw) | dc-east-s5 cpu_temp | peer fan_rpm median |
 |---|---|---|---|
 | 09-04 00:06 | 4026 | 53.4 | 4618.0 |
 | 09-04 00:07 | 4025 | 53.4 | 4683.0 |
@@ -353,11 +353,11 @@ dc-east-s5의 fan_rpm만 이상. 같은 호스트의 다른 센서와 동료들�
 | 09-04 00:34 | 4147 | 53.5 | 4532.0 |
 | 09-04 00:35 | 3990 | 53.8 | 4592.0 |
 
-## 5. threshold 후보별 결과 — 정답 구간 안(hit) / 밖(false alarm)
+## 5. Threshold candidates — inside an answer-key window (hit) / outside (false alarm)
 
-에피소드가 정답 구간과 겹치고 그 호스트가 해당 고장 대상이면 hit. 같은 고장을 여러 에피소드가 잡으면 전부 hit로 셈.
+An episode is a hit if it overlaps an answer-key window and its host is affected by that failure. Several episodes on the same failure all count as hits.
 
-| rule | episodes | hit | false alarm | 잡은 고장 |
+| rule | episodes | hit | false alarm | failures caught |
 |---|---|---|---|---|
 | cpu_temp > 58 for ≥ 5 min | 68 | 8 | 60 | ambient_high, cooling_fail, overload |
 | cpu_temp > 58 for ≥ 10 min | 23 | 7 | 16 | ambient_high, cooling_fail, overload |
@@ -396,48 +396,48 @@ dc-east-s5의 fan_rpm만 이상. 같은 호스트의 다른 센서와 동료들�
 | mem_used > 150 for ≥ 10 min | 1 | 1 | 0 | overload |
 | mem_used > 160 for ≥ 10 min | 1 | 1 | 0 | overload |
 
-false alarm의 정체 (cpu_temp > 60 for ≥ 10 min 기준):
+What the false alarms are (for cpu_temp > 60 for ≥ 10 min):
 
-| host | start | end | min | peak | 판정 |
+| host | start | end | min | peak | verdict |
 |---|---|---|---|---|---|
 | dc-west-s1 | 09-02 22:57 | 09-03 00:39 | 103 | 67.0 | hit |
 | dc-east-s1 | 09-02 23:08 | 09-03 01:00 | 113 | 76.2 | hit |
-| dc-west-s4 | 09-02 23:25 | 09-03 00:27 | 63 | 62.8 | 전날 저녁 dc-west: 피크 부하 + 폭염 램프(바깥 ~36 °C) |
-| dc-west-s4 | 09-03 00:29 | 09-03 00:45 | 17 | 61.7 | 전날 저녁 dc-west: 피크 부하 + 폭염 램프(바깥 ~36 °C) |
-| dc-west-s4 | 09-03 00:52 | 09-03 01:13 | 22 | 61.8 | 전날 저녁 dc-west: 피크 부하 + 폭염 램프(바깥 ~36 °C) |
+| dc-west-s4 | 09-02 23:25 | 09-03 00:27 | 63 | 62.8 | dc-west the evening before: peak load + heat-wave ramp (outside ~36 °C) |
+| dc-west-s4 | 09-03 00:29 | 09-03 00:45 | 17 | 61.7 | dc-west the evening before: peak load + heat-wave ramp (outside ~36 °C) |
+| dc-west-s4 | 09-03 00:52 | 09-03 01:13 | 22 | 61.8 | dc-west the evening before: peak load + heat-wave ramp (outside ~36 °C) |
 | dc-west-s4 | 09-03 23:00 | 09-04 02:31 | 212 | 69.1 | hit |
 | dc-west-s1 | 09-03 23:01 | 09-04 02:31 | 211 | 67.3 | hit |
 | dc-west-s2 | 09-03 23:05 | 09-04 02:31 | 207 | 66.4 | hit |
 | dc-west-s3 | 09-03 23:11 | 09-04 02:13 | 183 | 65.5 | hit |
 | dc-west-s5 | 09-03 23:13 | 09-04 01:45 | 153 | 66.1 | hit |
 | dc-west-s5 | 09-04 01:47 | 09-04 02:10 | 24 | 62.6 | hit |
-| dc-west-s3 | 09-04 02:18 | 09-04 02:28 | 11 | 61.6 | dc-west 폭염 구간 끝난 뒤 여열 |
-| dc-west-s5 | 09-04 02:20 | 09-04 02:31 | 12 | 61.6 | dc-west 폭염 구간 끝난 뒤 여열 |
+| dc-west-s3 | 09-04 02:18 | 09-04 02:28 | 11 | 61.6 | residual heat after the dc-west heat-wave window |
+| dc-west-s5 | 09-04 02:20 | 09-04 02:31 | 12 | 61.6 | residual heat after the dc-west heat-wave window |
 
-## 6. 변화율 (다음 규칙 5번용 미리보기) — 분당 변화량의 절대값, 연속된 분만
+## 6. Rate of change (preview for rule 5) — absolute change per minute, consecutive minutes only
 
-| sensor | 구간 | median | p95 | p99 | max |
+| sensor | period | median | p95 | p99 | max |
 |---|---|---|---|---|---|
-| cpu_temp | 정상 | 0.60 | 1.70 | 2.20 | 18.50 |
-| cpu_temp | 고장 중 | 0.60 | 1.80 | 2.60 | 12.50 |
-| fan_rpm | 정상 | 60.00 | 177.00 | 239.00 | 2840.00 |
-| fan_rpm | 고장 중 | 71.00 | 223.00 | 283.00 | 2156.00 |
-| power_draw | 정상 | 7.70 | 22.30 | 29.10 | 101.20 |
-| power_draw | 고장 중 | 7.90 | 23.10 | 30.50 | 183.70 |
-| mem_used | 정상 | 1.00 | 3.00 | 4.00 | 6.00 |
-| mem_used | 고장 중 | 1.00 | 3.00 | 4.00 | 6.00 |
-| outside_temp | 정상 | 0.40 | 1.10 | 1.40 | 2.50 |
+| cpu_temp | normal | 0.60 | 1.70 | 2.20 | 18.50 |
+| cpu_temp | during failure | 0.60 | 1.80 | 2.60 | 12.50 |
+| fan_rpm | normal | 60.00 | 177.00 | 239.00 | 2840.00 |
+| fan_rpm | during failure | 71.00 | 223.00 | 283.00 | 2156.00 |
+| power_draw | normal | 7.70 | 22.30 | 29.10 | 101.20 |
+| power_draw | during failure | 7.90 | 23.10 | 30.50 | 183.70 |
+| mem_used | normal | 1.00 | 3.00 | 4.00 | 6.00 |
+| mem_used | during failure | 1.00 | 3.00 | 4.00 | 6.00 |
+| outside_temp | normal | 0.40 | 1.10 | 1.40 | 2.50 |
 
-부하 계단 버그(정각마다 6~11 °C 점프, 92회)는 2026-09-03에 generator에서 고쳤고 이 표는 수정 후 데이터. 정상 구간에 남은 큰 점프는 어디서 나는지:
+The load-step bug (6–11 °C jumps at every schedule change, 92 times) was fixed in the generator on 2026-09-03; this table is post-fix data. Where the remaining big jumps come from:
 
-| ts_utc | host | 전 | 후 | 고장 구간? |
+| ts_utc | host | before | after | in a failure window? |
 |---|---|---|---|---|
-| 09-02 22:57 | dc-west-s1 | 51.7 | 64.2 | 예 |
-| 09-03 01:01 | dc-east-s1 | 75.6 | 57.1 | 아니오 |
+| 09-02 22:57 | dc-west-s1 | 51.7 | 64.2 | yes |
+| 09-03 01:01 | dc-east-s1 | 75.6 | 57.1 | no |
 
-cooling_fail 때 fan_rpm이 떨어지는 속도 (dc-east-s1, 10분 간격 차이):
+How fast fan_rpm falls during cooling_fail (dc-east-s1, 10-minute differences):
 
-| ts_utc | fan_rpm | 10분 전 대비 |
+| ts_utc | fan_rpm | vs 10 min earlier |
 |---|---|---|
 | 09-02 22:55 | 4684 |  |
 | 09-02 23:05 | 4486 | -198 |
@@ -447,15 +447,15 @@ cooling_fail 때 fan_rpm이 떨어지는 속도 (dc-east-s1, 10분 간격 차이
 | 09-02 23:45 | 1808 | -665 |
 | 09-02 23:55 | 1777 | -31 |
 
-## 7. 함정 상태 (detector가 울리면 안 되는 것)
+## 7. Trap status (things the detector must not fire on)
 
-- 스로틀링(≥74.5 °C): 76분, 전부 dc-east-s1 cooling_fail 안. **고장 없는 스로틀링은 0분** → 함정 데이터 아직 없음.
-- 금요일 밤 부하 스파이크: 48h 창이 금요일 저녁 전에 끝남 → 함정 데이터 없음.
-- 센서값 -1 / 0: 0행. seed 42의 sensor_fault는 frozen 타입이라 -1은 안 나옴.
-- server_stop 직전 power_outage 같은 dc: 현재 seed 42에서는 dc가 달라서(west / hawaii) 없음.
+- Throttling (≥74.5 °C): 76 minutes, all inside dc-east-s1's cooling_fail. **Throttling without a failure: 0 minutes** → no trap data yet.
+- Friday-night load spike: the 48 h window ends before Friday evening → no trap data.
+- Sensor value -1 / 0: 0 rows. Seed 42's sensor_fault is the frozen kind, so no -1 appears.
+- server_stop right before power_outage in the same dc: not in the current seed 42 (different dcs, west / hawaii).
 
-## 8. 결정할 것
+## 8. Decisions needed
 
-- 센서별 선과 연속 분: `cpu_temp > __ for __`, `fan_rpm < __ for __`, `power_draw > __`, `mem_used > __`
-- 5절 표에서 hit/false alarm 트레이드오프 확인. 고정 선으로는 dc-west 폭염+저녁을 못 피함 — 그건 6번 peer comparison에서.
-- 함정 3개(무고장 스로틀링, 금요일 밤, -1)가 데이터에 없음. 지금 generator에 넣을지, Phase 2 뒤로 미룰지.
+- Line and consecutive minutes per sensor: `cpu_temp > __ for __`, `fan_rpm < __ for __`, `power_draw > __`, `mem_used > __`
+- Check the hit / false-alarm trade-off in section 5. A fixed line cannot separate dc-west heat wave + evening from a single-server fault — that is rule 6, peer comparison.
+- Three traps (throttling without failure, Friday night, -1) are absent from the data. Add them to the generator now, or defer until after Phase 2.

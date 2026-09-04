@@ -22,10 +22,13 @@ import random
 import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
-DB_PATH = "telemetry.db"
-TRUTH_PATH = "ground_truth.csv"
+# data lives in <repo>/data, next to src/, whatever folder the script is run from
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DB_PATH = DATA_DIR / "telemetry.db"
+TRUTH_PATH = DATA_DIR / "ground_truth.csv"
 
 # ---------------------------------------------------------------------------
 # 1. Fleet definition (host info)
@@ -398,6 +401,7 @@ def main():
 
     rng = random.Random(args.seed)
     fleet = build_fleet(rng)
+    DATA_DIR.mkdir(exist_ok=True)
     con = open_db()
     write_hosts(con, fleet)
     state = fresh_state(fleet)
@@ -412,7 +416,7 @@ def main():
         while t < start + timedelta(hours=args.hours):
             total += tick(con, fleet, plans, t, rng, state)
             t += timedelta(minutes=1)
-        print(f"backfill done: {args.hours}h, {total} raw rows, {len(plans)} failures -> {TRUTH_PATH}")
+        print(f"backfill done: {args.hours}h, {total} raw rows, {len(plans)} failures -> {TRUTH_PATH.name}")
 
     else:  # live
         # continue from the last timestamp in the DB, or from now

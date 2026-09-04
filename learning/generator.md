@@ -26,7 +26,7 @@ write_truth(plans, args.seed, append=True)
 ```
 
 **확인 (scratch 복사본):** live 4초 → ground_truth.csv가 헤더 1 + 원래 6 + 새 6 = 13줄.
-backfill 1시간 → 7줄 (덮어쓰기 유지). 진짜 raw_data/ground_truth.csv는 7줄 그대로.
+backfill 1시간 → 7줄 (덮어쓰기 유지). 진짜 data/ground_truth.csv는 7줄 그대로.
 
 ## 2026-09-03 — ambient_high가 서버에 안 보여서 물리 조정 (아에리 결정)
 
@@ -151,3 +151,17 @@ overload 23:04 → 22:57, cooling_fail 23:01 → 23:02. 나머지 4개 동일.
 
 내가 처음 패치할 때 `s.replace(...)` 결과를 변수에 다시 넣지 않아서(`s = s.replace` 빠짐) 파일이 안 바뀐 채
 "patched"라고 찍혔다. 두 번째에 고침. 교훈: 패치 뒤에는 `grep`으로 실제 파일을 확인.
+
+## 2026-09-03 — 폴더 정리: 경로를 파일 기준으로
+
+폴더를 `raw_data/` → `src/`(코드) + `data/`(DB, 정답지)로 나눴다. 예전엔 `DB_PATH = "telemetry.db"`라서
+"지금 셸이 서 있는 폴더"에 DB를 만들었다 — 다른 폴더에서 실행하면 엉뚱한 곳에 새 DB가 생겼다.
+```python
+from pathlib import Path
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"   # 이 파일(src/generator.py) → src/ → 레포 루트 → data/
+DB_PATH = DATA_DIR / "telemetry.db"
+TRUTH_PATH = DATA_DIR / "ground_truth.csv"
+```
+- `__file__` = 이 파이썬 파일의 경로. `.resolve()` = 절대경로로. `.parent` = 한 단계 위 폴더.
+- `Path / "이름"` = 경로 이어 붙이기. 슬래시가 연산자.
+- collector.py, detector.py도 같은 한 줄. 이제 어디서 실행해도 `<레포>/data/telemetry.db`.
