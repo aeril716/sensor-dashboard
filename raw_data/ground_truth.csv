@@ -1,0 +1,7 @@
+seed,failure,scope,start_utc,end_utc,note
+42,overload,dc-west-s1,2026-09-02T22:57:00+00:00,2026-09-03T00:39:00+00:00,"load pinned at 100%, memory creeps up"
+42,cooling_fail,dc-east-s1,2026-09-02T23:02:00+00:00,2026-09-03T01:01:00+00:00,"fan degrades over ~40 min, temp follows"
+42,server_stop,dc-west-s5,2026-09-03T05:25:00+00:00,2026-09-03T06:14:00+00:00,server goes silent with no warning signs
+42,power_outage,dc-hawaii,2026-09-03T11:08:00+00:00,2026-09-03T11:21:00+00:00,"whole DC goes silent, returns cool"
+42,ambient_high,dc-west,2026-09-03T22:14:00+00:00,2026-09-04T02:03:00+00:00,outside temp exceeds cooling design envelope
+42,sensor_fault,dc-east-s5/fan_rpm,2026-09-04T00:09:00+00:00,2026-09-04T00:33:00+00:00,sensor returns frozen or invalid value

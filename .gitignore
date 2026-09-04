@@ -1,0 +1,6 @@
+# generated data — rebuild with: python generator.py backfill --hours 48 --seed 42 --start 2026-09-02T02:32:00+00:00 && python collector.py
+raw_data/telemetry.db
+
+__pycache__/
+*.pyc
+.DS_Store
